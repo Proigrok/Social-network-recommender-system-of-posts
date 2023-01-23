@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,9 @@ from database import SessionLocal
 
 from table_user import User
 from table_post import Post
-from schema import UserGet, PostGet
+from table_feed import Feed
+
+from schema import UserGet, PostGet, FeedGet
 app = FastAPI()
 
 def get_db():
@@ -26,4 +30,13 @@ def get_post(id:int, db: Session = Depends(get_db)):
         raise HTTPException(404, "post not found")
     else:
         return result
+
+@app.get("/user/{id}/feed", response_model=List[FeedGet])
+def get_user_feed(id:int, limit: int = 10, db: Session = Depends(get_db)):
+    return db.query(Feed).filter(Feed.user_id == id).order_by(Feed.time.desc()).limit(limit).all()
+
+@app.get("/post/{id}/feed", response_model=List[FeedGet])
+def get_post_feed(id:int, limit: int = 10, db: Session = Depends(get_db)):
+    return db.query(Feed).filter(Feed.post_id == id).order_by(Feed.time.desc()).limit(limit).all()
+
 
